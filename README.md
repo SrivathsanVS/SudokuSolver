@@ -1,0 +1,2 @@
+# SudokuSolver
+Automated sudo solver
