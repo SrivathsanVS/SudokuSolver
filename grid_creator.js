@@ -1,3 +1,5 @@
+const classes = require('./class_definitions.js');
+
 const NO_ROWS = 9;
 const NO_COLS = 9;
 const POSSIBLE_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -30,7 +32,7 @@ function initializeGrid() {
   let grid = {};
   for (let row = 1; row <= NO_ROWS; row++) {
     for (let col = 1; col <= NO_COLS; col++) {
-      grid[calculateCellNumber(row, col)] = Cell(row, col);
+      grid[calculateCellNumber(row, col)] = classes.Cell(row, col);
     }
   }
 }
