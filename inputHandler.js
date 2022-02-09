@@ -50,5 +50,3 @@ module.exports = {
   txtFileReader,
   parseGrid
 };
-
-console.log(parseGrid('examples/expert/expert_1.csv'));
