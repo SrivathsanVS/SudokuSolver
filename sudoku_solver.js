@@ -173,6 +173,11 @@ class GridHandler {
       this.solveWithoutAssumptions();
       if (!this.gridIsFilled() && !this.assumptionError) this.makeAssumption();
       if (!this.gridIsFilled() &&
+        this.assumptionError &&
+        (this.assumptionArray.length === 0)) {
+        console.log('\nErroneous input! Aborting\n');
+      }
+      if (!this.gridIsFilled() &&
         this.assumptionError) this.rectifyAssumption();
     }
     console.log('Solved Grid : ');
