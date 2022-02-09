@@ -1,11 +1,14 @@
 const setOperations = require('./set_operations.js');
 
+const POSSIBLE_VALUES = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
 class GridProperties {
   // Grid Property class
   constructor(gridLength) {
     this.NO_ROWS = gridLength;
     this.NO_COLS = gridLength;
     this.BOX_LENGTH = Math.sqrt(gridLength);
+    this.POSSIBLE_VALUES = this.possibleValues();
   }
 
   calculateBoxNumber(row, col) {
@@ -16,19 +19,30 @@ class GridProperties {
   calculateCellNumber(row, col) {
     return (this.NO_ROWS * (row - 1)) + col;
   }
+
+  possibleValues() {
+    let possibilities = new Array(this.NO_ROWS).fill(0);
+    possibilities = possibilities.map((_, index) => 1 + index);
+    return new Set(possibilities);
+  }
 }
 
 class Cell {
   // Cell class
-  constructor(row, col, box, cellNumber, POSSIBLE_VALUES) {
+  constructor(row, col, gridProps) {
     this.row = row;
     this.col = col;
-    this.box = box;
-    this.cellNumber = cellNumber;
+    this.box = gridProps.calculateBoxNumber(row, col);
+    this.cellNumber = gridProps.calculateCellNumber(row, col);
     this.value = undefined;
-    this.theoreticalPossibilities = POSSIBLE_VALUES;
+    this.theoreticalPossibilities = gridProps.POSSIBLE_VALUES;
     this.possibleValues = POSSIBLE_VALUES;
     this.notPossibleValues = new Set([]);
+    this.isFilled = false;
+  }
+
+  resetCell() {
+    this.value = undefined;
     this.isFilled = false;
   }
 
@@ -38,90 +52,35 @@ class Cell {
     this.isFilled = true;
   }
 
-  updatePossibleValues(set) {
-    let derivedPossibilities = setOperations.difference(this.theoreticalPossibilities,
-      this.notPossibleValues);
-    this.possibleValues = setOperations.intersection(derivedPossibilities, set);
-  }
-
-  updateNotPossibleValues(set) {
-    this.notPossibleValues = setOperations.union(this.notPossibleValues, set);
-  }
-}
-
-class CellGroup {
-  // CellGroup class
-  constructor(id, cellObj, POSSIBLE_VALUES) {
-    this.containedCells = cellObj;
-    this.id = id;
-    [this.filledCells, this.emptyCells] = this.categorizeCells();
-    this.theoreticalPossibilities = POSSIBLE_VALUES;
-    this.missingValues = this.initializeMissingValues();
-    this.notPossibleValues = this.deriveNotPossibleValues();
-    this.initializeCellValuePossibilities();
-  }
-
-  categorizeCells() {
-    let emptyCellObj = {};
-    let filledCellObj = {};
-    let self = this;
-    this.containedCells.keys().forEach(cellNumber => {
-      let cell = self.containedCells[cellNumber];
-      if (!cell.isFilled) {
-        emptyCellObj[cellNumber] = cell;
-      } else {
-        filledCellObj[cellNumber] = cell;
-      }
-    });
-    return [emptyCellObj, filledCellObj];
-  }
-
-  initializeMissingValues() {
-    let existingValues = [];
-    let self = this;
-    this.filledCells.keys().forEach(cellNumber =>
-      existingValues.push(self.containedCells[cellNumber].value));
-    return new Set(existingValues);
-  }
-
-  deriveNotPossibleValues() {
-    return setOperations.difference(this.theoreticalPossibilities,
-      this.missingValues);
-  }
-
-  initializeCellValuePossibilities() {
-    let commonMissing = this.theoreticalPossibilities;
-    for (let cell in this.emptyCells) {
-      cell.updateNotPossibleValues(this.notPossibleValues);
-      for (let otherCell in this.emptyCells) {
-        if (otherCell.cellNumber === cell.cellNumber) continue;
-        commonMissing = setOperations.intersection(commonMissing,
-          otherCell.notPossibleValues);
-      }
-      cell.updatePossibleValues(commonMissing);
+  returnDispVal() {
+    if (!this.isFilled) {
+      return ' ';
     }
+    return this.value;
   }
 
-  appendToFilledCells(cell) {
-    this.filledCells[cell.cellNumber] = cell;
+  updatePossibleValues(boxExistingVals, colExistingVals, rowExistingVals) {
+    let unionNotPossibleValues = setOperations.union(setOperations.union(boxExistingVals,
+      colExistingVals), rowExistingVals);
+    this.possibleValues = setOperations.difference(POSSIBLE_VALUES,
+      unionNotPossibleValues);
   }
 
-  removeFromEmptyCells(cell) {
-    delete this.emptyCells[cell.cellNumber];
+  hasUniquePossibleValue() {
+    return (this.possibleValues.size === 1);
   }
 
-  updateAfterCellFill(cell) {
-    this.appendToFilledCells(cell);
-    this.removeFromEmptyCells(cell);
-    this.notPossibleValues = setOperations.union(this.notPossibleValues,
-      cell.value);
-    this.missingValues = setOperations.difference(this.missingValues,
-      cell.value);
+  hasInvalidState() {
+    return (this.possibleValues.size === 0) && (!this.isFilled);
+  }
+
+  returnUniquePossibleValue() {
+    if (this.hasUniquePossibleValue()) return [...this.possibleValues][0];
+    return undefined;
   }
 }
 
 module.exports = {
   GridProperties,
-  Cell,
-  CellGroup
+  Cell
 };
